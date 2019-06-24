@@ -716,6 +716,24 @@ Util::file_copy (const char *to, const char *from)
 	return true;
 }
 
+char*
+Util::get_file_name_without_extension (const char *filename)
+{
+	size_t len = strlen (filename);
+	int dot_index;
+	for (dot_index = len - 1; dot_index > 0; dot_index--) {
+		if (filename[dot_index] == '.')
+			break;
+	}
+	// No extension
+	if (dot_index == 0)
+		return strdup_new (filename);
+	char *result = new char [dot_index + 1];
+	memcpy (result, filename, dot_index);
+	result[dot_index] = '\0';
+	return result;
+}
+
 bool
 Util::is_path_rooted (const char *path)
 {

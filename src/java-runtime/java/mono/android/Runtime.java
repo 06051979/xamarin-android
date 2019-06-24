@@ -15,7 +15,7 @@ public class Runtime {
 	public static native void initInternal (String lang, String[] runtimeApks, String runtimeDataDir, String[] appDirs, ClassLoader loader, String[] externalStorageDirs, String[] assemblies, int apiLevel, boolean embeddedDSOsEnabled);
 	public static native void register (String managedType, java.lang.Class nativeClass, String methods);
 	public static native void notifyTimeZoneChanged ();
-	public static native int createNewContext (String[] runtimeApks, String[] assemblies, ClassLoader loader);
+	public static native int createNewContext (String[] runtimeApks, String[] assemblies, byte[][] assembliesBytes, ClassLoader loader);
 	public static native void switchToContext (int contextID);
 	public static native void destroyContexts (int[] contextIDs);
 	public static native void propagateUncaughtException (Thread javaThread, Throwable javaException);

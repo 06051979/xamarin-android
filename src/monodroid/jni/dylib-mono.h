@@ -458,6 +458,8 @@ class DylibMono
 	typedef void                   (*monodroid_mono_profiler_set_jit_failed_callback_fptr) (MonoProfilerHandle handle, MonoJitFailedEventFunc failed_ftn);
 	typedef void                   (*monodroid_mono_profiler_set_thread_started_callback_fptr) (MonoProfilerHandle handle, MonoThreadStartedEventFunc start_ftn);
 	typedef void                   (*monodroid_mono_profiler_set_thread_stopped_callback_fptr) (MonoProfilerHandle handle, MonoThreadStoppedEventFunc stopped_ftn);
+	typedef void                   (*monodroid_mono_image_close_fptr) (MonoImage *image);
+	typedef MonoAssembly*          (*monodroid_mono_image_get_assembly_fptr) (MonoImage *image);
 
 #ifdef __cplusplus
 private:
@@ -557,6 +559,8 @@ struct DylibMono {
 	monodroid_mono_profiler_set_thread_stopped_callback_fptr        mono_profiler_set_thread_stopped_callback;
 	monodroid_mono_profiler_set_jit_begin_callback_fptr             mono_profiler_set_jit_begin_callback;
 	monodroid_mono_profiler_set_jit_failed_callback_fptr            mono_profiler_set_jit_failed_callback;
+	monodroid_mono_image_close_fptr                                 mono_image_close;
+	monodroid_mono_image_get_assembly_fptr                          mono_image_get_assembly;
 
 #ifdef __cplusplus
 	bool initialized;
@@ -682,6 +686,8 @@ public:
 	int runtime_set_main_args (int argc, char* argv[]);
 	MonoDomain* get_root_domain ();
 	void aot_register_module (void *aot_info);
+	void image_close (MonoImage *image);
+	MonoAssembly* image_get_assembly (MonoImage *image);
 
 #endif /* __cplusplus */
 };

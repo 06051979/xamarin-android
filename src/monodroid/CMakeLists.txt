@@ -222,6 +222,7 @@ set(MONODROID_SOURCES
   ${SOURCES_DIR}/debug-constants.cc
   ${SOURCES_DIR}/dylib-mono.cc
   ${SOURCES_DIR}/embedded-assemblies.cc
+  ${SOURCES_DIR}/inmemory-assemblies.cc
   ${SOURCES_DIR}/globals.cc
   ${SOURCES_DIR}/jni.c
   ${SOURCES_DIR}/logger.cc

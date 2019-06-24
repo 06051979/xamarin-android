@@ -164,6 +164,7 @@ namespace xamarin { namespace android
 		bool             file_exists (const char *file);
 		bool             directory_exists (const char *directory);
 		bool             file_copy (const char *to, const char *from);
+		char*            get_file_name_without_extension (const char *filename);
 		jclass           get_class_from_runtime_field (JNIEnv *env, jclass runtime, const char *name, bool make_gref = false);
 
 		char            *strdup_new (const char* s)
