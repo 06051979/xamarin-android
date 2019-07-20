@@ -2143,7 +2143,13 @@ JNICALL Java_mono_android_Runtime_register (JNIEnv *env, jclass klass, jstring m
 	monoFunctions.jit_thread_attach (domain);
 	// Refresh current domain as it might have been modified by the above call
 	domain = monoFunctions.domain_get ();
-	utils.monodroid_runtime_invoke (domain, registerType, nullptr, args, nullptr);
+
+	MonoMethod *register_jni_natives = registerType;
+	if (is_running_on_desktop) {
+		MonoClass *runtime = utils.monodroid_get_class_from_name (domain, "Mono.Android", "Android.Runtime", "JNIEnv");
+		register_jni_natives = monoFunctions.class_get_method_from_name (runtime, "RegisterJniNatives", 5);
+	}
+	utils.monodroid_runtime_invoke (domain, register_jni_natives, nullptr, args, nullptr);
 
 	env->ReleaseStringChars (methods, methods_ptr);
 	env->ReleaseStringChars (managedType, managedType_ptr);
