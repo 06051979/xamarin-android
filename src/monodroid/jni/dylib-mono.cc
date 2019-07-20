@@ -150,6 +150,10 @@ bool DylibMono::init (void *libmono_handle)
 	LOAD_SYMBOL(mono_add_internal_call_with_flags)
 	LOAD_SYMBOL(mono_image_close)
 	LOAD_SYMBOL(mono_image_get_assembly)
+	LOAD_SYMBOL(mono_array_new)
+	LOAD_SYMBOL(mono_value_copy_array)
+	LOAD_SYMBOL(mono_reflection_assembly_get_assembly)
+	LOAD_SYMBOL(mono_get_byte_class)
 
 	if (XA_UNLIKELY (utils.should_log (LOG_TIMING))) {
 		total_time.mark_end ();
@@ -585,6 +589,38 @@ DylibMono::image_get_assembly (MonoImage *image)
 		return nullptr;
 
 	return mono_image_get_assembly (image);
+}
+
+MonoArray*
+DylibMono::array_new (MonoDomain *domain, MonoClass *eclass, uintptr_t n)
+{
+	if (mono_array_new == nullptr)
+		return nullptr;
+	return mono_array_new (domain, eclass, n);
+}
+
+void
+DylibMono::value_copy_array (MonoArray *dest, int dest_idx, void* src, int count)
+{
+	if (mono_value_copy_array == nullptr)
+		return;
+	return mono_value_copy_array (dest, dest_idx, src, count);
+}
+
+MonoAssembly*
+DylibMono::reflection_assembly_get_assembly (MonoObject *refass)
+{
+	if (mono_reflection_assembly_get_assembly == nullptr)
+		return nullptr;
+	return mono_reflection_assembly_get_assembly (refass);
+}
+
+MonoClass*
+DylibMono::get_byte_class (void)
+{
+	if (mono_get_byte_class == nullptr)
+		return nullptr;
+	return mono_get_byte_class ();
 }
 
 void

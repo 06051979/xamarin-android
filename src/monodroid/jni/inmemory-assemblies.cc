@@ -27,7 +27,7 @@ InMemoryAssemblies::add_or_update_from_java (MonoDomain *domain, JNIEnv *env, js
 		jbyte *bytes = env->GetByteArrayElements (assembly_byte_array, &is_copy);
 		jstring_wrapper &assembly = assemblies [index];
 
-		names[index] = utils.get_file_name_without_extension (assembly.get_cstr ());
+		names[index] = utils.strdup_new (assembly.get_cstr ());
 		assemblies_bytes_len[index] = (int)bytes_len;
 		assemblies_bytes[index] = new char[bytes_len];
 		memcpy ((void*)assemblies_bytes[index], bytes, bytes_len);
@@ -55,54 +55,38 @@ InMemoryAssemblies::load_assembly_from_memory (MonoDomain *domain, MonoAssemblyN
 
 	const char *asm_name = monoFunctions.assembly_name_get_name (name);
 	int asm_count = entry->assemblies_count;
-	MonoAssembly *result = nullptr;
-	MonoDomain *current = monoFunctions.domain_get ();
-	if (current != domain)
-		monoFunctions.domain_set (domain, FALSE);
 
 	for (int i = 0; i < asm_count; i++) {
 		const char *entry_name = entry->names[i];
 		const char *entry_bytes = entry->assemblies_bytes[i];
 		const int entry_bytes_len = entry->assemblies_bytes_len[i];
 
-		if (strcmp (asm_name, entry_name) == 0) {
-			MonoImageOpenStatus status;
-			const char *image_name = monodroid_strdup_printf ("%s_%d", entry_name, domain_id);
-			MonoImage *image = monoFunctions.image_open_from_data_with_name ((char*)entry_bytes, entry_bytes_len, /*need_copy:*/true, &status, /*refonly:*/false, image_name);
-			if (!image || status != MonoImageOpenStatus::MONO_IMAGE_OK) {
-				if (image)
-					monoFunctions.image_close (image);
-				log_error (LOG_DEFAULT, "Couldn't load in-memory image for assembly %s, domain %d", entry_name, domain_id);
-				goto Cleanup;
-			}
+		if (strcmp (asm_name, entry_name) != 0)
+			continue;
 
-			// If image already has an associated assembly it means it was loaded earlier
-			MonoAssembly *mono_assembly = monoFunctions.image_get_assembly (image);
-			if (mono_assembly) {
-				monoFunctions.image_close (image);
-				log_info (LOG_DEFAULT, "Skipping %s that was already loaded for domain %d", entry_name, domain_id);
-				result = mono_assembly;
-				goto Cleanup;
-			}
+		// There is unfortunately no public unmanaged API to do proper in-memory
+		// loading (it would require access to the MonoAssemblyLoadRequest API)
+		MonoClass *assembly_klass = utils.monodroid_get_class_from_name (domain, "mscorlib", "System.Reflection", "Assembly");
+		MonoClass *byte_klass = monoFunctions.get_byte_class ();
+		// Use the variant with 3 parameters so that we always get the first argument being a byte[]
+		// (the two last don't matter since we pass null anyway)
+		MonoMethod *assembly_load_method = monoFunctions.class_get_method_from_name (assembly_klass, "Load", 3);
+		MonoArray *byteArray = monoFunctions.array_new (domain, byte_klass, entry_bytes_len);
+		monoFunctions.value_copy_array (byteArray, 0, (void*)entry_bytes, entry_bytes_len);
 
-			mono_assembly = monoFunctions.assembly_load_from_full (image, entry_name, &status, /*refonly:*/false);
-			monoFunctions.image_close (image);
-			if (!mono_assembly) {
-				log_error (LOG_DEFAULT, "Couldn't load in-memory assembly %s", entry_name);
-				goto Cleanup;
-			}
+		void *args[3];
+		args[0] = byteArray;
+		args[1] = nullptr;
+		args[2] = nullptr;
+		MonoObject *res = utils.monodroid_runtime_invoke (domain, assembly_load_method, nullptr, args, nullptr);
+		MonoAssembly *mono_assembly = monoFunctions.reflection_assembly_get_assembly (res);
 
-			log_info (LOG_DEFAULT, "Loaded %s from memory in domain %d", entry_name, domain_id);
+		log_info (LOG_DEFAULT, "Loaded %s from memory in domain %d", entry_name, domain_id);
 
-			result = mono_assembly;
-		}
+		return mono_assembly;
 	}
 
-Cleanup:
-	if (current != domain)
-		monoFunctions.domain_set (current, FALSE);
-
-	return result;
+	return nullptr;
 }
 
 void

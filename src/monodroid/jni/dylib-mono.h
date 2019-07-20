@@ -161,6 +161,10 @@ inline MonoCounters& operator |= (MonoCounters& left, MonoCounters right)
 	typedef struct _MonoDlFallbackHandler {} MonoDlFallbackHandler;
 #endif
 
+#ifndef MonoArray
+	typedef struct _MonoArray {} MonoArray;
+#endif
+
 typedef void (*MonoDomainFunc) (MonoDomain *domain, void* user_data);
 typedef void (*MonoJitBeginEventFunc) (MonoProfiler *prof, MonoMethod *method);
 typedef void (*MonoJitDoneEventFunc) (MonoProfiler *prof, MonoMethod *method, MonoJitInfo* jinfo);
@@ -460,6 +464,10 @@ class DylibMono
 	typedef void                   (*monodroid_mono_profiler_set_thread_stopped_callback_fptr) (MonoProfilerHandle handle, MonoThreadStoppedEventFunc stopped_ftn);
 	typedef void                   (*monodroid_mono_image_close_fptr) (MonoImage *image);
 	typedef MonoAssembly*          (*monodroid_mono_image_get_assembly_fptr) (MonoImage *image);
+	typedef MonoArray*             (*monodroid_mono_array_new_fptr) (MonoDomain *domain, MonoClass *eclass, uintptr_t n);
+	typedef void                   (*monodroid_mono_value_copy_array_fptr) (MonoArray *dest, int dest_idx, void* src, int count);
+	typedef MonoAssembly*          (*monodroid_mono_reflection_assembly_get_assembly_fptr) (MonoObject *refass);
+	typedef MonoClass*             (*monodroid_mono_get_byte_class_fptr) (void);
 
 #ifdef __cplusplus
 private:
@@ -561,6 +569,10 @@ struct DylibMono {
 	monodroid_mono_profiler_set_jit_failed_callback_fptr            mono_profiler_set_jit_failed_callback;
 	monodroid_mono_image_close_fptr                                 mono_image_close;
 	monodroid_mono_image_get_assembly_fptr                          mono_image_get_assembly;
+	monodroid_mono_array_new_fptr                                   mono_array_new;
+	monodroid_mono_value_copy_array_fptr                            mono_value_copy_array;
+	monodroid_mono_reflection_assembly_get_assembly_fptr            mono_reflection_assembly_get_assembly;
+	monodroid_mono_get_byte_class_fptr                             	mono_get_byte_class;
 
 #ifdef __cplusplus
 	bool initialized;
@@ -688,7 +700,10 @@ public:
 	void aot_register_module (void *aot_info);
 	void image_close (MonoImage *image);
 	MonoAssembly* image_get_assembly (MonoImage *image);
-
+	MonoArray* array_new (MonoDomain *domain, MonoClass *eclass, uintptr_t n);
+	void value_copy_array (MonoArray *dest, int dest_idx, void* src, int count);
+	MonoAssembly* reflection_assembly_get_assembly (MonoObject *refass);
+	MonoClass* get_byte_class (void);
 #endif /* __cplusplus */
 };
 #ifndef __cplusplus
