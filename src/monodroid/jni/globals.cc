@@ -8,7 +8,9 @@ Util utils;
 AndroidSystem androidSystem;
 OSBridge osBridge;
 EmbeddedAssemblies embeddedAssemblies;
+#ifndef ANDROID
 InMemoryAssemblies inMemoryAssemblies;
+#endif
 
 #ifdef DEBUG
 Debug debug;

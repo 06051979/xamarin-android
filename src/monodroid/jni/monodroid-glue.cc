@@ -414,16 +414,20 @@ open_from_update_dir (MonoAssemblyName *aname, char **assemblies_path, void *use
 	MonoAssembly *result = nullptr;
 	int found = 0;
 
+#ifndef ANDROID
 	// First check if there are any in-memory assemblies
 	if (inMemoryAssemblies.has_assemblies ()) {
 		MonoDomain *domain = monoFunctions.domain_get ();
 		result = inMemoryAssemblies.load_assembly_from_memory (domain, aname);
-		if (result != nullptr)
+		if (result != nullptr) {
+			log_info (LOG_DEFAULT, "Loaded assembly %s from memory in domain %d", monoFunctions.assembly_name_get_name (aname), monoFunctions.domain_get_id (domain));
 			return result;
+		}
 		log_info (LOG_DEFAULT, "No in-memory data found for assembly %s", monoFunctions.assembly_name_get_name (aname));
 	} else {
 		log_info (LOG_DEFAULT, "No in-memory assemblies detected", monoFunctions.assembly_name_get_name (aname));
 	}
+#endif
 
 	const char *culture = reinterpret_cast<const char*> (monoFunctions.assembly_name_get_culture (aname));
 	const char *name    = reinterpret_cast<const char*> (monoFunctions.assembly_name_get_name (aname));
@@ -1825,9 +1829,12 @@ load_assembly (MonoDomain *domain, JNIEnv *env, jstring_wrapper &assembly)
 
 	aname = monoFunctions.assembly_name_new (assm_name);
 
+#ifndef ANDROID
 	if (inMemoryAssemblies.has_assemblies () && inMemoryAssemblies.load_assembly_from_memory (domain, aname) != nullptr) {
 		log_info (LOG_DEFAULT, "Dynamically opened assembly %s from memory", monoFunctions.assembly_name_get_name (aname));
-	} else if (domain != monoFunctions.domain_get ()) {
+	} else
+#endif
+	if (domain != monoFunctions.domain_get ()) {
 		MonoDomain *current = monoFunctions.domain_get ();
 		monoFunctions.domain_set (domain, FALSE);
 		monoFunctions.assembly_load_full (aname, NULL, NULL, 0);
@@ -1882,8 +1889,9 @@ create_and_initialize_domain (JNIEnv* env, jclass runtimeClass, jstring_array_wr
 	if (is_running_on_desktop && is_root_domain)
 		return domain;
 
-	log_info (LOG_DEFAULT, "create_and_initialize_domain: %s", androidSystem.is_assembly_preload_enabled () ? "preloading" : "not preloading");
+#ifndef ANDROID
 	inMemoryAssemblies.add_or_update_from_java (domain, env, assemblies, assembliesbytes);
+#endif
 	if (androidSystem.is_assembly_preload_enabled ())
 		load_assemblies (domain, env, assemblies);
 	init_android_runtime (domain, env, runtimeClass, loader);
@@ -2236,7 +2244,9 @@ JNICALL Java_mono_android_Runtime_destroyContexts (JNIEnv *env, jclass klass, ji
 		log_info (LOG_DEFAULT, "Shutting down domain `%d'", contextIDs[i]);
 		shutdown_android_runtime (domain);
 		osBridge.remove_monodroid_domain (domain);
+#ifndef ANDROID
 		inMemoryAssemblies.clear_for_domain (domain);
+#endif
 	}
 	osBridge.on_destroy_contexts ();
 

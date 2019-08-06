@@ -1,10 +1,8 @@
-
 #include "inmemory-assemblies.h"
 #include "globals.h"
 
 extern "C" {
 #include "java-interop-util.h"
-#include "logger.h"
 }
 
 namespace xamarin { namespace android { namespace internal {
@@ -81,8 +79,6 @@ InMemoryAssemblies::load_assembly_from_memory (MonoDomain *domain, MonoAssemblyN
 		MonoObject *res = utils.monodroid_runtime_invoke (domain, assembly_load_method, nullptr, args, nullptr);
 		MonoAssembly *mono_assembly = monoFunctions.reflection_assembly_get_assembly (res);
 
-		log_info (LOG_DEFAULT, "Loaded %s from memory in domain %d", entry_name, domain_id);
-
 		return mono_assembly;
 	}
 
@@ -96,6 +92,58 @@ InMemoryAssemblies::clear_for_domain (MonoDomain *domain)
 	InMemoryAssemblyEntry *entry = remove_entry (domain_id);
 	if (entry != nullptr)
 		delete entry;
+}
+
+InMemoryAssemblies::InMemoryAssemblyEntry*
+InMemoryAssemblies::find_entry (int domain_id)
+{
+	for (int i = 0; i < length; i++) {
+		auto entry = entries[i];
+		if (entry->domain_id == domain_id)
+			return entry;
+	}
+	return nullptr;
+}
+
+void
+InMemoryAssemblies::add_or_replace_entry (InMemoryAssemblies::InMemoryAssemblyEntry *new_entry)
+{
+	for (int i = 0; i < length; i++) {
+		auto entry = entries[i];
+		if (entry->domain_id == new_entry->domain_id) {
+			entries[i] = new_entry;
+			delete entry;
+			return;
+		}
+	}
+	add_entry (new_entry);
+}
+
+void
+InMemoryAssemblies::add_entry (InMemoryAssemblies::InMemoryAssemblyEntry *entry)
+{
+	if (length >= capacity) {
+		capacity <<= 1;
+		InMemoryAssemblyEntry **new_entries = new InMemoryAssemblyEntry*[capacity];
+		memcpy ((void*)new_entries, entries, length);
+		entries = new_entries;
+	}
+	entries[length++] = entry;
+}
+
+InMemoryAssemblies::InMemoryAssemblyEntry*
+InMemoryAssemblies::remove_entry (int domain_id)
+{
+	for (int i = 0; i < length; i++) {
+		auto entry = entries[i];
+		if (entry->domain_id == domain_id) {
+			for (int j = i; j < length - 1; j++)
+				entries[j] = entries[j + 1];
+			length--;
+			return entry;
+		}
+	}
+	return nullptr;
 }
 
 } } }

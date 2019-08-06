@@ -148,8 +148,6 @@ bool DylibMono::init (void *libmono_handle)
 	LOAD_SYMBOL(mono_profiler_set_thread_started_callback)
 	LOAD_SYMBOL(mono_profiler_set_thread_stopped_callback)
 	LOAD_SYMBOL(mono_add_internal_call_with_flags)
-	LOAD_SYMBOL(mono_image_close)
-	LOAD_SYMBOL(mono_image_get_assembly)
 	LOAD_SYMBOL(mono_array_new)
 	LOAD_SYMBOL(mono_value_copy_array)
 	LOAD_SYMBOL(mono_reflection_assembly_get_assembly)
@@ -571,24 +569,6 @@ DylibMono::image_open_from_data_with_name (char *data, uint32_t data_len, bool n
 		return nullptr;
 
 	return mono_image_open_from_data_with_name (data, data_len, need_copy, status, refonly ? TRUE : FALSE, name);
-}
-
-void
-DylibMono::image_close (MonoImage *image)
-{
-	if (mono_image_close == nullptr)
-		return;
-
-	return mono_image_close (image);
-}
-
-MonoAssembly*
-DylibMono::image_get_assembly (MonoImage *image)
-{
-	if (mono_image_get_assembly == nullptr)
-		return nullptr;
-
-	return mono_image_get_assembly (image);
 }
 
 MonoArray*

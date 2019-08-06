@@ -33,58 +33,14 @@ namespace xamarin { namespace android { namespace internal {
 			void clear_for_domain (MonoDomain *domain);
 
 		private:
-			// TODO: replace with some sort of default data structure
 			InMemoryAssemblyEntry **entries;
 			int capacity;
 			int length;
 
-			InMemoryAssemblyEntry* find_entry (int domain_id)
-			{
-				for (int i = 0; i < length; i++) {
-					auto entry = entries[i];
-					if (entry->domain_id == domain_id)
-						return entry;
-				}
-				return nullptr;
-			}
-
-			void add_or_replace_entry (InMemoryAssemblyEntry *new_entry)
-			{
-				for (int i = 0; i < length; i++) {
-					auto entry = entries[i];
-					if (entry->domain_id == new_entry->domain_id) {
-						entries[i] = new_entry;
-						delete entry;
-						return;
-					}
-				}
-				add_entry (new_entry);
-			}
-
-			void add_entry (InMemoryAssemblyEntry *entry)
-			{
-				if (length >= capacity) {
-					capacity <<= 1;
-					InMemoryAssemblyEntry **new_entries = new InMemoryAssemblyEntry*[capacity];
-					memcpy ((void*)new_entries, entries, length);
-					entries = new_entries;
-				}
-				entries[length++] = entry;
-			}
-
-			InMemoryAssemblyEntry* remove_entry (int domain_id)
-			{
-				for (int i = 0; i < length; i++) {
-					auto entry = entries[i];
-					if (entry->domain_id == domain_id) {
-						for (int j = i; j < length - 1; j++)
-							entries[j] = entries[j + 1];
-						length--;
-						return entry;
-					}
-				}
-				return nullptr;
-			}
+			InMemoryAssemblyEntry* find_entry (int domain_id);
+			void add_or_replace_entry (InMemoryAssemblyEntry *new_entry);
+			void add_entry (InMemoryAssemblyEntry *entry);
+			InMemoryAssemblyEntry* remove_entry (int domain_id);
 	};
 } } }
 
