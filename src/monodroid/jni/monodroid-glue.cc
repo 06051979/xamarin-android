@@ -2192,7 +2192,7 @@ reinitialize_android_runtime_type_manager (JNIEnv *env)
 }
 
 JNIEXPORT jint
-JNICALL Java_mono_android_Runtime_createNewContext (JNIEnv *env, jclass klass, jobjectArray runtimeApksJava, jobjectArray assembliesJava, jobjectArray assembliesbytes, jobject loader)
+JNICALL Java_mono_android_Runtime_createNewContextWithData (JNIEnv *env, jclass klass, jobjectArray runtimeApksJava, jobjectArray assembliesJava, jobjectArray assembliesbytes, jobject loader)
 {
 	log_info (LOG_DEFAULT, "CREATING NEW CONTEXT");
 	reinitialize_android_runtime_type_manager (env);
@@ -2207,6 +2207,13 @@ JNICALL Java_mono_android_Runtime_createNewContext (JNIEnv *env, jclass klass, j
 	current_context_id = domain_id;
 	log_info (LOG_DEFAULT, "Created new context with id %d\n", domain_id);
 	return domain_id;
+}
+
+/* !DO NOT REMOVE! Used by older versions of the Android Designer */
+JNIEXPORT jint
+JNICALL Java_mono_android_Runtime_createNewContext (JNIEnv *env, jclass klass, jobjectArray runtimeApksJava, jobjectArray assembliesJava, jobject loader)
+{
+	return Java_mono_android_Runtime_createNewContextWithData (env, klass, runtimeApksJava, assembliesJava, nullptr, loader);
 }
 
 JNIEXPORT void
