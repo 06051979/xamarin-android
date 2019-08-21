@@ -405,6 +405,13 @@ stages:
         project: tests/EmbeddedDSOs/EmbeddedDSO/EmbeddedDSO.csproj
         testResultsFiles: TestResult-Xamarin.Android.EmbeddedDSO_Test.nunit-$(ApkTestConfiguration).xml
 
+    - template: yaml-templates/apk-instrumentation.yaml
+      parameters:
+        configuration: $(ApkTestConfiguration)
+        testName: Xamarin.Android.DefaultInterfaceMethods-Tests
+        project: tests/CodeGen-Binding/Xamarin.Android.DefaultInterfaceMethods-Tests/Xamarin.Android.DefaultInterfaceMethods-Tests.csproj
+        testResultsFiles: TestResult-Xamarin.Android.DefaultInterfaceMethods-Tests-$(ApkTestConfiguration).xml
+
     - task: MSBuild@1
       displayName: run Xamarin.Forms-Performance-Integration
       inputs:

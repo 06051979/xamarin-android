@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <_PackageName>xamarin.android.defaultinterfacemethods_tests</_PackageName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <TestApk Include="$(OutputPath)xamarin.android.defaultinterfacemethods_tests-Signed.apk">
+      <Package>xamarin.android.defaultinterfacemethods_tests</Package>
+      <TimingDefinitionsFilename>$(MSBuildThisFileDirectory)..\..\..\build-tools\scripts\TimingDefinitions.txt</TimingDefinitionsFilename>
+      <TimingResultsFilename>$(MSBuildThisFileDirectory)..\..\..\TestResult-Xamarin.Android.Dim_Tests-times.csv</TimingResultsFilename>
+    </TestApk>
+  </ItemGroup>
+  
+  <ItemGroup>
+    <TestApkInstrumentation Include="xamarin.android.dimtests.TestInstrumentation">
+      <Package>xamarin.android.defaultinterfacemethods_tests</Package>
+      <ResultsPath>$(OutputPath)TestResult-Xamarin.Android.Dim_Tests.xml</ResultsPath>
+    </TestApkInstrumentation>
+
+    <TestApkPermission Include="READ_EXTERNAL_STORAGE">
+      <Package>xamarin.android.defaultinterfacemethods_tests</Package>
+    </TestApkPermission>
+
+    <TestApkPermission Include="WRITE_EXTERNAL_STORAGE">
+      <Package>xamarin.android.defaultinterfacemethods_tests</Package>
+    </TestApkPermission>
+  </ItemGroup>
+
+  <Import Project="..\..\..\build-tools\scripts\TestApks.targets" />
+
+  <Target Name="RunTests"
+      DependsOnTargets="AndroidPrepareForBuild">
+    <Exec Command="&quot;$(_AndroidPlatformToolsDirectory)adb&quot; $(AdbTarget) $(AdbOptions) shell am instrument -w $(_AndroidPackage)/xamarin.android.dimtests.TestInstrumentation" />
+  </Target>
+  
+  <Target Name="CleanLocal">
+    <RemoveDir Directories="bin;obj;libs" />
+  </Target>
+</Project>
