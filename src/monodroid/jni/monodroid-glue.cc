@@ -1881,7 +1881,7 @@ monodroid_Mono_UnhandledException_internal (MonoException *ex)
 }
 
 static MonoDomain*
-create_and_initialize_domain (JNIEnv* env, jclass runtimeClass, jstring_array_wrapper &runtimeApks, jstring_array_wrapper &assemblies, jobjectArray assembliesbytes, jobject loader, bool is_root_domain)
+create_and_initialize_domain (JNIEnv* env, jclass runtimeClass, jstring_array_wrapper &runtimeApks, jstring_array_wrapper &assemblies, jobjectArray assembliesbytes, jobject loader, bool is_root_domain, bool force_preload_assemblies)
 {
 	MonoDomain* domain = create_domain (env, runtimeClass, runtimeApks, loader, is_root_domain);
 
@@ -1892,7 +1892,7 @@ create_and_initialize_domain (JNIEnv* env, jclass runtimeClass, jstring_array_wr
 #ifndef ANDROID
 	inMemoryAssemblies.add_or_update_from_java (domain, env, assemblies, assembliesbytes);
 #endif
-	if (androidSystem.is_assembly_preload_enabled ())
+	if (androidSystem.is_assembly_preload_enabled () || (is_running_on_desktop && force_preload_assemblies))
 		load_assemblies (domain, env, assemblies);
 	init_android_runtime (domain, env, runtimeClass, loader);
 
@@ -2104,7 +2104,7 @@ Java_mono_android_Runtime_initInternal (JNIEnv *env, jclass klass, jstring lang,
 
 	jstring_array_wrapper assemblies (env, assembliesJava);
 	/* the first assembly is used to initialize the AppDomain name */
-	create_and_initialize_domain (env, klass, runtimeApks, assemblies, nullptr, loader, /*is_root_domain:*/ true);
+	create_and_initialize_domain (env, klass, runtimeApks, assemblies, nullptr, loader, /*is_root_domain:*/ true, /*force_preload_assemblies:*/ false);
 
 	delete[] runtime_args;
 
@@ -2192,7 +2192,7 @@ reinitialize_android_runtime_type_manager (JNIEnv *env)
 }
 
 JNIEXPORT jint
-JNICALL Java_mono_android_Runtime_createNewContextWithData (JNIEnv *env, jclass klass, jobjectArray runtimeApksJava, jobjectArray assembliesJava, jobjectArray assembliesbytes, jobject loader)
+JNICALL Java_mono_android_Runtime_createNewContextWithData (JNIEnv *env, jclass klass, jobjectArray runtimeApksJava, jobjectArray assembliesJava, jobjectArray assembliesbytes, jobject loader, jboolean force_preload_assemblies)
 {
 	log_info (LOG_DEFAULT, "CREATING NEW CONTEXT");
 	reinitialize_android_runtime_type_manager (env);
@@ -2201,7 +2201,7 @@ JNICALL Java_mono_android_Runtime_createNewContextWithData (JNIEnv *env, jclass 
 
 	jstring_array_wrapper runtimeApks (env, runtimeApksJava);
 	jstring_array_wrapper assemblies (env, assembliesJava);
-	MonoDomain *domain = create_and_initialize_domain (env, klass, runtimeApks, assemblies, assembliesbytes, loader, /*is_root_domain:*/ false);
+	MonoDomain *domain = create_and_initialize_domain (env, klass, runtimeApks, assemblies, assembliesbytes, loader, /*is_root_domain:*/ false, force_preload_assemblies);
 	monoFunctions.domain_set (domain, FALSE);
 	int domain_id = monoFunctions.domain_get_id (domain);
 	current_context_id = domain_id;
@@ -2213,7 +2213,7 @@ JNICALL Java_mono_android_Runtime_createNewContextWithData (JNIEnv *env, jclass 
 JNIEXPORT jint
 JNICALL Java_mono_android_Runtime_createNewContext (JNIEnv *env, jclass klass, jobjectArray runtimeApksJava, jobjectArray assembliesJava, jobject loader)
 {
-	return Java_mono_android_Runtime_createNewContextWithData (env, klass, runtimeApksJava, assembliesJava, nullptr, loader);
+	return Java_mono_android_Runtime_createNewContextWithData (env, klass, runtimeApksJava, assembliesJava, nullptr, loader, false);
 }
 
 JNIEXPORT void
