@@ -2209,7 +2209,7 @@ JNICALL Java_mono_android_Runtime_createNewContextWithData (JNIEnv *env, jclass 
 	return domain_id;
 }
 
-/* !DO NOT REMOVE! Used by older versions of the Android Designer */
+/* !DO NOT REMOVE! Used by older versions of the Android Designer (pre-16.4) */
 JNIEXPORT jint
 JNICALL Java_mono_android_Runtime_createNewContext (JNIEnv *env, jclass klass, jobjectArray runtimeApksJava, jobjectArray assembliesJava, jobject loader)
 {

@@ -13,27 +13,27 @@ InMemoryAssemblies::add_or_update_from_java (MonoDomain *domain, JNIEnv *env, js
 	if (assembliesBytes == nullptr)
 		return;
 
-	jsize len = env->GetArrayLength (assembliesBytes);
+	unsigned int len = static_cast<unsigned int> (env->GetArrayLength (assembliesBytes));
 	char **names = new char*[len];
 	char **assemblies_bytes = new char*[len];
-	int *assemblies_bytes_len = new int[len];
+	unsigned int *assemblies_bytes_len = new unsigned int[len];
 
-	for (int index = 0; index < len; index++) {
+	for (unsigned int index = 0; index < len; index++) {
 		jboolean is_copy;
-		jbyteArray assembly_byte_array = reinterpret_cast <jbyteArray> (env->GetObjectArrayElement (assembliesBytes, index));
-		jsize bytes_len = env->GetArrayLength (assembly_byte_array);
+		jbyteArray assembly_byte_array = reinterpret_cast <jbyteArray> (env->GetObjectArrayElement (assembliesBytes, (jsize)index));
+		unsigned int bytes_len = static_cast<unsigned int> (env->GetArrayLength (assembly_byte_array));
 		jbyte *bytes = env->GetByteArrayElements (assembly_byte_array, &is_copy);
 		jstring_wrapper &assembly = assemblies [index];
 
 		names[index] = utils.strdup_new (assembly.get_cstr ());
-		assemblies_bytes_len[index] = (int)bytes_len;
+		assemblies_bytes_len[index] = bytes_len;
 		assemblies_bytes[index] = new char[bytes_len];
 		memcpy ((void*)assemblies_bytes[index], bytes, bytes_len);
 
 		env->ReleaseByteArrayElements (assembly_byte_array, bytes, JNI_ABORT);
 	}
 
-	InMemoryAssemblyEntry *new_entry = new InMemoryAssemblyEntry;
+	InMemoryAssemblyEntry *new_entry = new InMemoryAssemblyEntry ();
 	new_entry->domain_id = monoFunctions.domain_get_id (domain);
 	new_entry->assemblies_count = len;
 	new_entry->names = names;
@@ -52,12 +52,12 @@ InMemoryAssemblies::load_assembly_from_memory (MonoDomain *domain, MonoAssemblyN
 		return nullptr;
 
 	const char *asm_name = monoFunctions.assembly_name_get_name (name);
-	int asm_count = entry->assemblies_count;
+	unsigned int asm_count = entry->assemblies_count;
 
-	for (int i = 0; i < asm_count; i++) {
+	for (unsigned int i = 0; i < asm_count; i++) {
 		const char *entry_name = entry->names[i];
 		const char *entry_bytes = entry->assemblies_bytes[i];
-		const int entry_bytes_len = entry->assemblies_bytes_len[i];
+		const unsigned int entry_bytes_len = entry->assemblies_bytes_len[i];
 
 		if (strcmp (asm_name, entry_name) != 0)
 			continue;
@@ -70,7 +70,7 @@ InMemoryAssemblies::load_assembly_from_memory (MonoDomain *domain, MonoAssemblyN
 		// (the two last don't matter since we pass null anyway)
 		MonoMethod *assembly_load_method = monoFunctions.class_get_method_from_name (assembly_klass, "Load", 3);
 		MonoArray *byteArray = monoFunctions.array_new (domain, byte_klass, entry_bytes_len);
-		monoFunctions.value_copy_array (byteArray, 0, (void*)entry_bytes, entry_bytes_len);
+		monoFunctions.value_copy_array (byteArray, 0, (void*)entry_bytes, (int)entry_bytes_len);
 
 		void *args[3];
 		args[0] = byteArray;
@@ -97,7 +97,7 @@ InMemoryAssemblies::clear_for_domain (MonoDomain *domain)
 InMemoryAssemblies::InMemoryAssemblyEntry*
 InMemoryAssemblies::find_entry (int domain_id)
 {
-	for (int i = 0; i < length; i++) {
+	for (unsigned int i = 0; i < length; i++) {
 		auto entry = entries[i];
 		if (entry->domain_id == domain_id)
 			return entry;
@@ -108,7 +108,7 @@ InMemoryAssemblies::find_entry (int domain_id)
 void
 InMemoryAssemblies::add_or_replace_entry (InMemoryAssemblies::InMemoryAssemblyEntry *new_entry)
 {
-	for (int i = 0; i < length; i++) {
+	for (unsigned int i = 0; i < length; i++) {
 		auto entry = entries[i];
 		if (entry->domain_id == new_entry->domain_id) {
 			entries[i] = new_entry;
@@ -123,10 +123,12 @@ void
 InMemoryAssemblies::add_entry (InMemoryAssemblies::InMemoryAssemblyEntry *entry)
 {
 	if (length >= capacity) {
-		capacity <<= 1;
+		capacity = MULTIPLY_WITH_OVERFLOW_CHECK(unsigned int, capacity, 2);
 		InMemoryAssemblyEntry **new_entries = new InMemoryAssemblyEntry*[capacity];
-		memcpy ((void*)new_entries, entries, length);
+		memcpy ((void*)new_entries, entries, MULTIPLY_WITH_OVERFLOW_CHECK(size_t, sizeof(void*), length));
+		InMemoryAssemblyEntry **old_entries = entries;
 		entries = new_entries;
+		delete[] old_entries;
 	}
 	entries[length++] = entry;
 }
@@ -134,10 +136,10 @@ InMemoryAssemblies::add_entry (InMemoryAssemblies::InMemoryAssemblyEntry *entry)
 InMemoryAssemblies::InMemoryAssemblyEntry*
 InMemoryAssemblies::remove_entry (int domain_id)
 {
-	for (int i = 0; i < length; i++) {
+	for (unsigned int i = 0; i < length; i++) {
 		auto entry = entries[i];
 		if (entry->domain_id == domain_id) {
-			for (int j = i; j < length - 1; j++)
+			for (unsigned int j = i; j < length - 1; j++)
 				entries[j] = entries[j + 1];
 			length--;
 			return entry;

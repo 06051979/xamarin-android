@@ -14,10 +14,10 @@ namespace xamarin { namespace android { namespace internal {
 			struct InMemoryAssemblyEntry
 			{
 				int domain_id;
-				int assemblies_count;
+				unsigned int assemblies_count;
 				char **names;
 				char **assemblies_bytes;
-				int *assemblies_bytes_len;
+				unsigned int *assemblies_bytes_len;
 			};
 
 		public:
@@ -34,8 +34,8 @@ namespace xamarin { namespace android { namespace internal {
 
 		private:
 			InMemoryAssemblyEntry **entries;
-			int capacity;
-			int length;
+			unsigned int capacity;
+			unsigned int length;
 
 			InMemoryAssemblyEntry* find_entry (int domain_id);
 			void add_or_replace_entry (InMemoryAssemblyEntry *new_entry);
